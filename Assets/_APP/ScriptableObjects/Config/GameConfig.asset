@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f52ef53f2e43be846b7324c00c04b44c, type: 3}
+  m_Name: GameConfig
+  m_EditorClassIdentifier: 
+  columns: 7
+  beginnerHighlights: 1
+  useEmptyColumnProgression: 1
+  upgradeAtClearCount1: 1
+  upgradeAtClearCount2: 2
+  initialPasses: 3
+  passScoreCost: 50
+  maxBonusStacks: 2
+  undoSteps: 1
+  undoScoreCost: 100
+  useComboBonus: 1
+  comboX1_2: 1.2
+  comboX1_5: 1.5
+  comboX2_0: 2
+  winTarget: 2048
