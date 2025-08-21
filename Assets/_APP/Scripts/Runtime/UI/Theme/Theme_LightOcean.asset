@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b9be16d34885be4aafdfb4b76533d0e, type: 3}
+  m_Name: Theme_LightOcean
+  m_EditorClassIdentifier: 
+  canvasBg: {r: 0.9607843, g: 0.9607843, b: 0.96862745, a: 1}
+  panelBg: {r: 0.9254902, g: 0.93333334, b: 0.9490196, a: 1}
+  boardBg: {r: 0.87058824, g: 0.9019608, b: 1, a: 1}
+  cardBg: {r: 1, g: 1, b: 1, a: 1}
+  btnPrimary: {r: 0.08627451, g: 0.6392157, b: 0.7254902, a: 1}
+  btnSecondary: {r: 0.5411765, g: 0.5647059, b: 0.6392157, a: 1}
+  accent: {r: 1, g: 0.8, b: 0, a: 1}
+  textPrimary: {r: 0.13333334, g: 0.14117648, b: 0.16862746, a: 1}
+  textSecondary: {r: 0.33333334, g: 0.34901962, b: 0.4, a: 1}
+  bodyFont: {fileID: 0}
+  numberFont: {fileID: 0}
+  valueKeys: 0200000004000000080000001000000020000000400000008000000000010000000200000004000000080000
+  valueColors:
+  - {r: 0.93333334, g: 0.89411765, b: 0.85490197, a: 1}
+  - {r: 0.92941177, g: 0.8784314, b: 0.78431374, a: 1}
+  - {r: 0.9490196, g: 0.69411767, b: 0.4745098, a: 1}
+  - {r: 0.9607843, g: 0.58431375, b: 0.3882353, a: 1}
+  - {r: 0.9647059, g: 0.4862745, b: 0.37254903, a: 1}
+  - {r: 0.9647059, g: 0.36862746, b: 0.23137255, a: 1}
+  - {r: 0.92941177, g: 0.8117647, b: 0.44705883, a: 1}
+  - {r: 0.92941177, g: 0.8, b: 0.38039216, a: 1}
+  - {r: 0.92941177, g: 0.78431374, b: 0.3137255, a: 1}
+  - {r: 0.92941177, g: 0.77254903, b: 0.24705882, a: 1}
+  - {r: 0.92941177, g: 0.7607843, b: 0.18039216, a: 1}
