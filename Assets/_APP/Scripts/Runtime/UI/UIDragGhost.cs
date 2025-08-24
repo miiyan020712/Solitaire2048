@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using App.Gameplay; // 追加
 
 namespace App.UI
 {
@@ -21,7 +22,23 @@ namespace App.UI
 
         RectTransform _ghostRT;
         CanvasGroup _ghostCg;
+        
+
+        [Header("Rules")]
+        public RuleSet ruleSet;
+        public RectTransform[] stackArrayForState;  // Column_x/Stack を左→右の順で
+       
+
+        [Header("Highlight Colors")]
+        public Color okColor = new Color(0f, 1f, 1f, 0.14f); // シアンっぽい
+        public Color ngColor = new Color(1f, 0f, 0f, 0.16f); // 赤
+
+        [Header("Placer")]
+        public BoardPlacer boardPlacer;   // ここに BoardPlacer をドラッグ
+        public UIFlash wasteFlash;        // NG時の赤フラッシュ（WasteFlash）※任意
+
         int _hoverIndex = -1;
+        bool _hoverLegal = false;
 
         public void OnBeginDrag(PointerEventData e)
         {
@@ -39,33 +56,77 @@ namespace App.UI
             UpdateGhostPosition(e);
         }
 
-        public void OnDrag(PointerEventData e)
+public void OnDrag(PointerEventData e)
+{
+    UpdateGhostPosition(e);
+
+    int newIndex = -1;
+    bool newLegal = false;
+
+    for (int i = 0; i < columns.Count; i++)
+    {
+        if (RectTransformUtility.RectangleContainsScreenPoint(columns[i], e.position, e.pressEventCamera))
         {
-            UpdateGhostPosition(e);
-            // どのColumn上にいるか簡易判定（RectTransformUtilityで当たり）
-            int newIndex = -1;
-            for (int i = 0; i < columns.Count; i++)
+            newIndex = i;
+
+            // ここで合法判定
+            if (ruleSet && stackArrayForState != null && stackArrayForState.Length == columns.Count)
             {
-                if (RectTransformUtility.RectangleContainsScreenPoint(columns[i], e.position, e.pressEventCamera))
-                {
-                    newIndex = i; break;
-                }
+                var state = new App.Gameplay.BoardState(stackArrayForState);
+                int v = 0; int.TryParse(wasteValue ? wasteValue.text : "0", out v);
+                newLegal = App.Gameplay.MoveValidator.CanPlace(i, v, state, ruleSet, out _);
             }
-            if (newIndex != _hoverIndex)
+            else
             {
-                SetHighlight(_hoverIndex, false);
-                _hoverIndex = newIndex;
-                SetHighlight(_hoverIndex, true);
+                newLegal = true; // 参照未設定時はとりあえずOK扱い
             }
+            break;
         }
+    }
+
+    if (newIndex != _hoverIndex || newLegal != _hoverLegal)
+    {
+        // 旧ハイライトを消す
+        SetHighlight(_hoverIndex, false, _hoverLegal);
+
+        _hoverIndex = newIndex;
+        _hoverLegal = newLegal;
+
+        // 新ハイライトを色付きで点灯
+        SetHighlight(_hoverIndex, true, _hoverLegal);
+    }
+}
+
+void SetHighlight(int idx, bool on, bool legal)
+{
+    if (idx < 0 || idx >= dropHighlights.Count) return;
+    var img = dropHighlights[idx];
+    if (!img) return;
+    img.color = legal ? okColor : ngColor;
+    img.gameObject.SetActive(on);
+}
+
 
         public void OnEndDrag(PointerEventData e)
-        {
-            // ハイライト解除
-            SetHighlight(_hoverIndex, false);
-            // ゴーストを元位置へ戻して消す（デモ）
-            if (_ghostRT) StartCoroutine(FlyBackAndKill());
-        }
+{
+    // 旧ハイライト消灯
+    SetHighlight(_hoverIndex, false, _hoverLegal);
+
+    // 合法なら置く、NGならWasteを赤フラ
+    if (_hoverIndex >= 0)
+    {
+        bool placed = false;
+        if (boardPlacer)
+            placed = boardPlacer.TryPlaceAt(_hoverIndex);
+
+        if (!placed && wasteFlash)
+            wasteFlash.Play(); // NGフィードバック
+    }
+
+    // ゴーストは消す
+    if (_ghostRT) StartCoroutine(FlyBackAndKill());
+}
+
 
         void UpdateGhostPosition(PointerEventData e)
         {

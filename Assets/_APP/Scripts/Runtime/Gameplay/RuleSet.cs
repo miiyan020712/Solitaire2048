@@ -22,6 +22,10 @@ namespace App.Gameplay
         [Tooltip("同値は合成可能として『置ける』扱いにするか")]
         public bool allowEqualMerge = true;
 
+        [Header("Merge")]
+        [Tooltip("同値合成を一度だけにするか、下に同値が続く限り連鎖するか")]
+        public bool allowChainMerge = false;
+
         // スコア係数・コンボ等は後で追加予定
     }
 }

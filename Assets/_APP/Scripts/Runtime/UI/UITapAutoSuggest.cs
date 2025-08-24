@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using App.Gameplay;   // ← 先頭の using に追加
+using App.UI; // UIFlash を使う
 
 namespace App.UI
 {
@@ -32,6 +33,9 @@ namespace App.UI
         public RectTransform[] stackArrayForState;  // ← BoardState を作る用（stacks と同順なら同じ参照でOK）
 
         bool busy;
+
+        [Header("Feedback")]
+        public UIFlash wasteFlash;  // WasteCard 子の WasteFlash を割り当て
 
         // ==== 公開API：Waste をタップ時に呼ぶ ====
         public void OnWasteTapped()
@@ -97,9 +101,10 @@ namespace App.UI
                 if (highlights[i]) highlights[i].gameObject.SetActive(false);
 
             if (idx < 0 || idx >= stacks.Count) {
-                // 置けない時の簡易フィードバック（赤点滅＋揺れ）
-                yield return StartCoroutine(ShakeWaste());
-                busy = false; yield break;
+            // 置ける列が無い：赤フラッシュ + 揺れ
+            if (wasteFlash) wasteFlash.Play();
+            yield return StartCoroutine(ShakeWaste());
+            busy = false; yield break;
             }
 
             // ハイライト点灯

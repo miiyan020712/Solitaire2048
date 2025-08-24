@@ -16,3 +16,4 @@ MonoBehaviour:
   emptyColumn: 0
   allowDescending: 1
   allowEqualMerge: 1
+  allowChainMerge: 0
