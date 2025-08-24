@@ -142,7 +142,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: UIDrawDemo, Assembly-CSharp
+        m_TargetAssemblyTypeName: App.UI.UIDeckToWaste, Assembly-CSharp
         m_MethodName: OnDeckClicked
         m_Mode: 1
         m_Arguments:
