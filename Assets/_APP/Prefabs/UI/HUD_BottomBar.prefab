@@ -339,8 +339,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 20, y: 14.888888}
+  m_AnchoredPosition: {x: 6, y: 6}
+  m_SizeDelta: {x: 24, y: 24}
   m_Pivot: {x: 1, y: 1}
 --- !u!222 &6732719457557717357
 CanvasRenderer:
@@ -715,6 +715,9 @@ GameObject:
   - component: {fileID: 1870245001002560225}
   - component: {fileID: 4156968198977360779}
   - component: {fileID: 5793120183764752082}
+  - component: {fileID: 8727100895192363802}
+  - component: {fileID: 3784238982171843251}
+  - component: {fileID: 1737250437874070620}
   m_Layer: 5
   m_Name: BtnBonus
   m_TagString: Untagged
@@ -763,7 +766,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -839,10 +842,52 @@ MonoBehaviour:
   m_MinWidth: -1
   m_MinHeight: -1
   m_PreferredWidth: 100
-  m_PreferredHeight: 160
+  m_PreferredHeight: 120
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &8727100895192363802
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4092287451281128983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c20cce01adfc8ce4e97735962d308e57, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  token: 6
+--- !u!114 &3784238982171843251
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4092287451281128983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c8f4a1ae4a3279a4bb86a7286e4a2070, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  scaleDown: 0.92
+  dur: 0.06
+--- !u!114 &1737250437874070620
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4092287451281128983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6e9ffb094af6f8242beb8fcd2a5932bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  button: {fileID: 4156968198977360779}
+  canvasGroup: {fileID: 0}
+  badgeText: {fileID: 1247298503410256750}
 --- !u!1 &4770019101344234142
 GameObject:
   m_ObjectHideFlags: 0
@@ -1157,7 +1202,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 14
+  m_fontSize: 17
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
