@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using App.Gameplay;   // ← 先頭の using に追加
 
 namespace App.UI
 {
@@ -26,6 +27,10 @@ namespace App.UI
         public float showHighlightSec = 0.35f;
         public AnimationCurve ease = AnimationCurve.EaseInOut(0,0,1,1);
 
+        [Header("Rules")]
+        public RuleSet ruleSet;          // ← 追加（インスペクタで RuleSet.asset を割当）
+        public RectTransform[] stackArrayForState;  // ← BoardState を作る用（stacks と同順なら同じ参照でOK）
+
         bool busy;
 
         // ==== 公開API：Waste をタップ時に呼ぶ ====
@@ -40,47 +45,39 @@ namespace App.UI
         // ---- 疑似ロジック：良さそうな列を1つ選ぶ（あとで本実装に差し替える）----
         int PickColumnIndex(int waste)
 {
+    var state = new BoardState(stackArrayForState); // UI から現在値を読み取る
+
     int n = stacks.Count;
     int center = n / 2;
-
     int best = -1;
     float bestScore = float.NegativeInfinity;
 
     for (int i = 0; i < n; i++)
     {
+        // まず合法判定。ダメなら候補外
+        if (!MoveValidator.CanPlace(i, waste, state, ruleSet, out _))
+            continue;
+
         var st = stacks[i];
         int count = st ? st.childCount : 0;
-        int top = ReadTopValue(st); // 0 = 空扱い
+        int top = ReadTopValue(st);
 
         float score = 0f;
-
-        // 1) 空列評価（空列は2以外は置けない想定なので弱め/強めを選べる）
-        if (count == 0)
-            score += (waste == 2) ? 200f : -30f;
-
-        // 2) 合成（同値）を最優先
+        // 合成最優先
         if (top == waste && count > 0) score += 150f;
-
-        // 3) 降順“合法”に近いほど高評価（近いほど＋大）
+        // 近い降順を高評価
         if (top > waste) score += 80f - Mathf.Log(Mathf.Max(1, top - waste), 2f) * 10f;
-
-        // 4) 逆順（top < waste）は減点
-        if (top > 0 && top < waste) score -= 40f;
-
-        // 5) 低い列を少し優遇
+        // 低い列を少し優遇
         score -= count * 0.6f;
-
-        // 6) 中央寄せ（端に寄りすぎない）
+        // 中央寄せバイアス
         score -= Mathf.Abs(i - center) * 2.5f;
-
-        // 7) 同点ブレイク用の微小乱数
         score += Random.value * 0.01f;
 
         if (score > bestScore) { bestScore = score; best = i; }
     }
-
-    return best; // -1 なら見つからず
+    return best; // 無ければ -1
 }
+
 
 
         int ReadTopValue(RectTransform stack)

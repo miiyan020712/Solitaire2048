@@ -324,6 +324,15 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  ruleSet: {fileID: 11400000, guid: 090be11b1f351c24fab84b1854fedb4e, type: 2}
+  stackArrayForState:
+  - {fileID: 1707616902}
+  - {fileID: 1777817827}
+  - {fileID: 239962836}
+  - {fileID: 1477530738}
+  - {fileID: 1174253490}
+  - {fileID: 1192319970}
+  - {fileID: 977432937}
 --- !u!114 &31332906
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -345,7 +354,7 @@ MonoBehaviour:
   demoSequence: 020000000200000004000000040000000800000008000000100000001000000020000000400000008000000000010000
   loopSequence: 1
   remaining: 42
-  autoSuggest: {fileID: 31332905}
+  autoSuggest: {fileID: 0}
 --- !u!1 &81487248
 GameObject:
   m_ObjectHideFlags: 0
@@ -3123,41 +3132,9 @@ PrefabInstance:
     m_TransformParent: {fileID: 477001810}
     m_Modifications:
     - target: {fileID: 668476284869815224, guid: d70882699dd12d240b34950031a43817, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 668476284869815224, guid: d70882699dd12d240b34950031a43817, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 668476284869815224, guid: d70882699dd12d240b34950031a43817, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 31332906}
-    - target: {fileID: 668476284869815224, guid: d70882699dd12d240b34950031a43817, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
-      value: 
-      objectReference: {fileID: 31332903}
-    - target: {fileID: 668476284869815224, guid: d70882699dd12d240b34950031a43817, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 668476284869815224, guid: d70882699dd12d240b34950031a43817, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
-      value: OnDeckClicked
-      objectReference: {fileID: 0}
-    - target: {fileID: 668476284869815224, guid: d70882699dd12d240b34950031a43817, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: App.UI.UIDeckToWaste, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 668476284869815224, guid: d70882699dd12d240b34950031a43817, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
-      value: UIDrawDemo, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 668476284869815224, guid: d70882699dd12d240b34950031a43817, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
-      objectReference: {fileID: 0}
     - target: {fileID: 2199298711914348326, guid: d70882699dd12d240b34950031a43817, type: 3}
       propertyPath: m_Name
       value: BottomBar
