@@ -20,6 +20,12 @@ namespace App.Systems
         float combo = 1f;
         float lastMergeTime = -999f;
 
+        [Header("FX")]
+        public GameObject floatingScorePrefab;   // FloatingScore
+        public RectTransform canvasRT;           // CanvasのRectTransform
+        public RectTransform[] columnTops;       // 各列のHeader(一番上)RT
+        public RectTransform comboBadgeRT;       // バッジをポンとさせる
+
         void Awake()
         {
             combo = policy ? policy.comboStart : 1f;
@@ -65,6 +71,9 @@ namespace App.Systems
             UpdateScoreUI();
             if (scoreTextRT) StartCoroutine(Punch(scoreTextRT));
 
+            ShowFloatingScore($"+{add}", LastPlacedColumnIndexOrCenter()); // 追加
+            if (comboBadgeRT) StartCoroutine(Punch(comboBadgeRT));         // 追加
+
             // コンボ上昇
             float step = policy ? policy.comboStep : 0.2f;
             float max  = policy ? policy.comboMax  : 3.0f;
@@ -109,5 +118,31 @@ namespace App.Systems
             while (t < d) { t += Time.unscaledDeltaTime; rt.localScale = Vector3.Lerp(b, a, t / d); yield return null; }
             rt.localScale = a;
         }
+
+        int LastPlacedColumnIndexOrCenter() { /* 直近の配置列をBoardPlacerからもらう or 0 */ return 0; }
+
+        void ShowFloatingScore(string text, int col)
+        {
+            if (!floatingScorePrefab || !canvasRT) return;
+            var go = Instantiate(floatingScorePrefab, canvasRT);
+            var tmp = go.GetComponent<TMPro.TMP_Text>(); if (tmp) tmp.text = text;
+
+            // 出発位置：列ヘッダーの中央あたり
+        RectTransform from = (columnTops != null && col >=0 && col < columnTops.Length) ? columnTops[col] : scoreTextRT;
+        var rt = go.GetComponent<RectTransform>();
+        rt.position = from.position;
+
+        StartCoroutine(FlyUpAndFade(go.GetComponent<CanvasGroup>(), rt));
+        }
+
+System.Collections.IEnumerator FlyUpAndFade(CanvasGroup cg, RectTransform rt)
+{
+    float t=0, d=0.6f; Vector3 start=rt.anchoredPosition; Vector3 end=start + new Vector3(0, 80, 0);
+    while (t<d) { t+=Time.unscaledDeltaTime; float u=t/d; 
+        rt.anchoredPosition = Vector3.Lerp(start,end,u);
+        if (cg) cg.alpha = 1f - u;
+        yield return null; }
+    Destroy(rt.gameObject);
+}
     }
 }
