@@ -21,9 +21,9 @@ MonoBehaviour:
   - value: 8
     weight: 15
   - value: 16
-    weight: 7
+    weight: 15
   - value: 32
-    weight: 3
+    weight: 15
   reshuffleWhenEmpty: 0
   fixedSeed: 0
   openingDraws: 5
