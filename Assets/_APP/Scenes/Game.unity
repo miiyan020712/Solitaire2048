@@ -140,6 +140,8 @@ GameObject:
   - component: {fileID: 31332906}
   - component: {fileID: 31332907}
   - component: {fileID: 31332908}
+  - component: {fileID: 31332910}
+  - component: {fileID: 31332909}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -358,6 +360,8 @@ MonoBehaviour:
   loopSequence: 1
   remaining: 42
   autoSuggest: {fileID: 0}
+  _seqIndex: 0
+  _busy: 0
 --- !u!114 &31332907
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -412,6 +416,42 @@ MonoBehaviour:
   - {fileID: 584653126}
   - {fileID: 1523094198}
   comboBadgeRT: {fileID: 825114830}
+--- !u!114 &31332909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 31332898}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c945a839e838bd498854eaac2010484, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  canvasRT: {fileID: 31332902}
+  deckCardRT: {fileID: 418352167}
+  wasteCardRT: {fileID: 2114713146}
+  deckCountText: {fileID: 1826281242}
+  wasteValueText: {fileID: 888670004}
+  flyCard: {fileID: 1920547063}
+  deckService: {fileID: 31332910}
+  placer: {fileID: 31332907}
+  autoSuggest: {fileID: 31332905}
+  drawOnStart: 1
+  autoDrawAfterPlacement: 1
+--- !u!114 &31332910
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 31332898}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f339ff3ffad40e743abb47d182ed359d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  definition: {fileID: 11400000, guid: d44478ed4681f164facc72875f0c7f0e, type: 2}
 --- !u!1 &81487248
 GameObject:
   m_ObjectHideFlags: 0
@@ -3270,7 +3310,7 @@ PrefabInstance:
     - target: {fileID: 668476284869815224, guid: d70882699dd12d240b34950031a43817, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 31332906}
+      objectReference: {fileID: 31332909}
     - target: {fileID: 2199298711914348326, guid: d70882699dd12d240b34950031a43817, type: 3}
       propertyPath: m_Name
       value: BottomBar
@@ -3402,6 +3442,14 @@ PrefabInstance:
     - target: {fileID: 4160469874683757612, guid: d70882699dd12d240b34950031a43817, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5436721463420956394, guid: d70882699dd12d240b34950031a43817, type: 3}
+      propertyPath: m_text
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 5436721463420956394, guid: d70882699dd12d240b34950031a43817, type: 3}
+      propertyPath: m_fontSize
+      value: 36
       objectReference: {fileID: 0}
     - target: {fileID: 6521077381933904963, guid: d70882699dd12d240b34950031a43817, type: 3}
       propertyPath: m_AnchorMax.y

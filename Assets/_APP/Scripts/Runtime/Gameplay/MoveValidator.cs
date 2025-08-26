@@ -7,38 +7,45 @@ namespace App.Gameplay
         /// <summary>
         /// 指定列に value を『置けるか？』を判定（まだ実際には置かない）
         /// </summary>
-        public static bool CanPlace(int column, int value, BoardState board, RuleSet rules, out string reason)
+        public static bool CanPlace(int columnIndex, int value, BoardState state, RuleSet rules, out string reason)
         {
-            reason = null;
-            if (board == null || rules == null) { reason = "no_state"; return false; }
+            reason = "unknown";
 
-            // 範囲 & 高さ
-            if (column < 0 || column >= board.ColumnCount) { reason = "out_of_range"; return false; }
-            if (board.Height(column) >= rules.maxHeight) { reason = "max_height"; return false; }
-
-            // 空列
-            if (board.IsEmpty(column))
+            // --- 空列：今回は「制限撤廃」 ---
+            if (state.IsEmpty(columnIndex))
             {
-                if (rules.emptyColumn == RuleSet.EmptyPolicy.Only2 && value != 2)
-                {
-                    reason = "empty_only_2";
-                    return false;
-                }
                 reason = "ok_empty";
+                return true;
+                // もし旧仕様の「Only2」enumを残しているなら:
+                // return (rules.emptyColumn == EmptyColumnPolicy.Any) || (rules.emptyColumn == EmptyColumnPolicy.Only2 && value == 2);
+            }
+
+            // --- 非空列：トップ値取得 ---
+            int top = state.Top(columnIndex);
+
+            // --- 同値合成は常にOK（実際の合成は BoardPlacer 側で実行） ---
+            if (rules.allowEqualMerge && value == top)
+            {
+                reason = "ok_equal_merge";
                 return true;
             }
 
-            // 何か乗っている列：降順 or 同値合成
-            int top = board.Top(column);
-
-            // 同値合成OK
-            if (rules.allowEqualMerge && value == top) { reason = "ok_equal_merge"; return true; }
-
-            // 降順OK（value が top 以下）
-            if (rules.allowDescending && value < top) { reason = "ok_descending"; return true; }
-
-            reason = "order_violation";
-            return false;
+            // --- 並び順（降順 or 昇順）---
+            if (rules.allowDescending)
+            {
+                // 降順: 置く値 <= トップ ならOK
+                if (value <= top) { reason = "ok_descending"; return true; }
+                reason = "order_violation"; // 例: 4の上に8 を禁止
+                return false;
+            }
+            else
+            {
+                // （参考）昇順運用に切り替える場合はこちら
+                if (value >= top) { reason = "ok_ascending"; return true; }
+                reason = "order_violation";
+                return false;
+            }
         }
+
     }
 }

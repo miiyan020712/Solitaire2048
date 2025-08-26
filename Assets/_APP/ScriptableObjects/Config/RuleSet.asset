@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: RuleSet
   m_EditorClassIdentifier: 
   maxHeight: 12
-  emptyColumn: 0
+  emptyColumn: 1
   allowDescending: 1
   allowEqualMerge: 1
   allowChainMerge: 1
