@@ -83,6 +83,7 @@
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\ChatController.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\ObjectSpin.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_PhoneNumberValidator.cs" />
+    <Compile Include="Assets\_APP\Scripts\Runtime\Gameplay\CardViewExtensions.cs" />
     <Compile Include="Assets\_APP\Scripts\Runtime\Systems\ScorePolicy.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexJitter.cs" />
     <Compile Include="Assets\_APP\Scripts\Runtime\UI\Theme\ThemeImage.cs" />
@@ -104,6 +105,7 @@
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextSelector_B.cs" />
     <Compile Include="Assets\_APP\Scripts\Runtime\UI\UITapAutoSuggest.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\SkewTextExample.cs" />
+    <Compile Include="Assets\_APP\Scripts\Runtime\Gameplay\RowSpawner.cs" />
     <Compile Include="Assets\_APP\Scripts\Runtime\UI\Theme\ThemeManager.cs" />
     <Compile Include="Assets\_APP\Scripts\Runtime\UI\Theme\ThemeText.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\WarpTextExample.cs" />

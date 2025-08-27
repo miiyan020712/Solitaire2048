@@ -1,6 +1,8 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using CardView = App.UI.Themeing.CardView;
+using App.Gameplay;
 
 namespace App.Gameplay
 {
@@ -293,5 +295,59 @@ namespace App.Gameplay
             }
             rt.localScale = b;
         }
+
+        // 列数
+public int ColumnCount => stacks.Length;
+
+// その列のカード数（CardView 子オブジェクト数ベース）
+public int GetColumnCount(int col) => stacks[col].childCount;
+
+// その列の「最上段（見た目の上）」の値
+public int GetTopValue(int col)
+{
+    var stack = stacks[col];
+    if (stack.childCount == 0) return int.MaxValue; // 空列は何でも載る扱い
+    var topCard = stack.GetChild(0).GetComponent<CardView>();
+    return topCard ? topCard.Value : int.MaxValue;
+}
+
+// その列の高さが threshold 以上のものがあるか
+public bool AnyColumnAtOrAbove(int threshold)
+{
+    for (int i = 0; i < stacks.Length; i++)
+        if (stacks[i].childCount >= threshold) return true;
+    return false;
+}
+
+// 段生成用：列の最上段にカードを追加（基本合成しない）
+public void AddAtTop(int col, int value, bool animate = true, bool allowMergeOnSpawn = false)
+{
+    var stack = stacks[col];
+    var card = Instantiate(cardViewPrefab, stack);
+    card.SetValue(value);
+
+    // 見た目の「上」に来るよう先頭に移動
+    card.transform.SetAsFirstSibling();
+
+    // ここ！ () を付ける
+    if (animate) StartCoroutine(PopIn(card.RectTransform()));
+}
+
+// ちょっとしたポップイン
+System.Collections.IEnumerator PopIn(RectTransform rt)
+{
+    Vector3 from = Vector3.one * 0.01f;
+    Vector3 to   = Vector3.one;
+    float t = 0f, dur = 0.12f;
+    rt.localScale = from;
+    while (t < dur)
+    {
+        t += Time.deltaTime;
+        rt.localScale = Vector3.LerpUnclamped(from, to, Mathf.SmoothStep(0, 1, t / dur));
+        yield return null;
+    }
+    rt.localScale = to;
+}
+
     }
 }
