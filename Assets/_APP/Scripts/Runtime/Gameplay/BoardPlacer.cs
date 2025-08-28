@@ -43,6 +43,9 @@ namespace App.Gameplay
         [SerializeField] private int visualRowCapacity = 10;  // 画面に実際に入る段数（後でInspectorで調整）
         public int VisualRowCapacity => visualRowCapacity;
 
+        [Header("Lock")] public bool inputLocked = false;
+        public void SetLocked(bool v) => inputLocked = v;
+
 
 
         /// <summary>合成時に発火（合成後の最終値。例: 2+2→4 なら 4）</summary>
@@ -63,6 +66,8 @@ namespace App.Gameplay
         /// </summary>
         public bool TryPlaceAt(int columnIndex)
         {
+            if (inputLocked) return false; // or return;
+
             if (!IsReady() || columnIndex < 0 || columnIndex >= stacks.Length)
                 return false;
 
@@ -105,6 +110,7 @@ namespace App.Gameplay
         /// </summary>
         bool TryPlaceFromBottom(int columnIndex, int value)
         {
+            if (inputLocked) return false; // or return;
             var st = stacks[columnIndex];
             if (!st) return false;
 
@@ -175,6 +181,7 @@ namespace App.Gameplay
         /// </summary>
         bool TryPlaceFromTop(int columnIndex, int value)
         {
+            if (inputLocked) return false; // or return;
             // 合法判定（BoardState/MoveValidator を利用）
             var state = new BoardState(stacks);
             if (!MoveValidator.CanPlace(columnIndex, value, state, ruleSet, out _))

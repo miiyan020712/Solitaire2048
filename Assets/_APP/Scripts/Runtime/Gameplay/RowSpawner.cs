@@ -40,6 +40,10 @@ namespace App.Gameplay
         int _currentMin;                          // 「下げない」ための下限
         readonly int[] _pow2 = { 2,4,8,16,32,64,128,256,512,1024,2048 };
 
+        public DeckController deck;            // ← Inspector で Root の DeckController をドラッグ
+        public bool lockDrawDuringSpawn = true;
+        public float graceAfterSpawn = 0.25f;  // 行が出た直後の短い猶予（アニメ安定待ち）
+
         void OnEnable()
         {
             _gameOver = false;
@@ -56,6 +60,8 @@ namespace App.Gameplay
             // 1フレーム待って参照の遅延を回避
             yield return null;
 
+            
+
 if (timeBar) timeBar.Play(_interval);   // ← 追加（初回分）
 while (!_gameOver)
 {
@@ -65,8 +71,23 @@ while (!_gameOver)
     yield return new WaitForSeconds(_interval);
     if (_gameOver) yield break;
 
-    SpawnOneRow();
+    // ★ 行を出す瞬間だけロック
+    if (lockDrawDuringSpawn && deck) deck.SetDrawLocked(true);
 
+    SpawnOneRow();                      // ここで行を追加（アニメ中）
+
+    // 行後のちょい猶予。TimeBar を止めておくと事故りにくい
+    if (graceAfterSpawn > 0f)
+    {
+        if (timeBar) timeBar.Pause(true);
+        yield return new WaitForSeconds(graceAfterSpawn);
+        if (timeBar) timeBar.Pause(false);
+    }
+
+    // ロック解除
+    if (lockDrawDuringSpawn && deck) deck.SetDrawLocked(false);
+
+    // 難易度の段階上げ＆次の間隔
     if ((_rowsSpawned + 1) % 4 == 0 && _currentMin < maxValue)
         _currentMin = Mathf.Min(maxValue, _currentMin * 2);
 

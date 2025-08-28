@@ -7,8 +7,8 @@ using App.Gameplay;
 namespace App.UI
 {
     /// <summary>
-    /// ƒfƒbƒL‚ÌƒNƒŠƒbƒN¨Waste‚É1–‡ƒhƒ[A”z’u/‡¬¬Œ÷Œã‚Í©“®‚ÅŸƒhƒ[B
-    /// UIƒAƒjƒiFlyCardj‚Æ DeckCount/WasteValue ‚ÌXV‚à‚±‚±‚Å’S“–B
+    /// ï¿½fï¿½bï¿½Lï¿½ÌƒNï¿½ï¿½ï¿½bï¿½Nï¿½ï¿½Wasteï¿½ï¿½1ï¿½ï¿½ï¿½hï¿½ï¿½ï¿½[ï¿½Aï¿½zï¿½u/ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íï¿½ï¿½ï¿½ï¿½Åï¿½ï¿½hï¿½ï¿½ï¿½[ï¿½B
+    /// UIï¿½Aï¿½jï¿½ï¿½ï¿½iFlyCardï¿½jï¿½ï¿½ DeckCount/WasteValue ï¿½ÌXï¿½Vï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å’Sï¿½ï¿½ï¿½B
     /// </summary>
     public class DeckController : MonoBehaviour
     {
@@ -18,16 +18,26 @@ namespace App.UI
         public RectTransform wasteCardRT;
         public TMP_Text deckCountText;
         public TMP_Text wasteValueText;
-        public Image flyCard;                    // Canvas’¼‰º‚ÌFlyCardiq‚ÉTMP‚ª‚ ‚ê‚Î”š•\¦j
+        public Image flyCard;                    // Canvasï¿½ï¿½ï¿½ï¿½ï¿½ï¿½FlyCardï¿½iï¿½qï¿½ï¿½TMPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îï¿½ï¿½ï¿½ï¿½\ï¿½ï¿½ï¿½j
 
         [Header("Links")]
-        public DeckService deckService;          // RDƒƒWƒbƒN
-        public App.Gameplay.BoardPlacer placer;  // ”z’u/‡¬ƒCƒxƒ“ƒg‚ğw“Ç
-        public App.UI.UITapAutoSuggest autoSuggest; // ”CˆÓF•â[Œã‚É’ñˆÄ‚ğ‘–‚ç‚¹‚é
+        public DeckService deckService;          // ï¿½Rï¿½Dï¿½ï¿½ï¿½Wï¿½bï¿½N
+        public App.Gameplay.BoardPlacer placer;  // ï¿½zï¿½u/ï¿½ï¿½ï¿½ï¿½ï¿½Cï¿½xï¿½ï¿½ï¿½gï¿½ï¿½ï¿½wï¿½ï¿½
+        public App.UI.UITapAutoSuggest autoSuggest; // ï¿½Cï¿½ÓFï¿½ï¿½[ï¿½ï¿½É’ï¿½Ä‚ğ‘–‚ç‚¹ï¿½ï¿½
 
         [Header("Options")]
-        public bool drawOnStart = true;          // ‹N“®’¼Œã‚É1–‡‚ß‚­‚é
+        public bool drawOnStart = true;          // ï¿½Nï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½1ï¿½ï¿½ï¿½ß‚ï¿½ï¿½ï¿½
         public bool autoDrawAfterPlacement = true;
+
+        [Header("Input Lock")]
+        public bool drawLocked = false;
+        public void SetDrawLocked(bool v) => drawLocked = v;
+        public bool IsDrawLocked => drawLocked;
+
+        // DeckController.cs
+        public void LockDraw()  => SetDrawLocked(true);
+        public void UnlockDraw()=> SetDrawLocked(false);
+
 
         bool _busy;
 
@@ -59,9 +69,10 @@ namespace App.UI
             }
         }
 
-        // === UI‚©‚çŒÄ‚ÔiDeckCard‚ÌButton OnClickj ===
+        // === UIï¿½ï¿½ï¿½ï¿½Ä‚ÔiDeckCardï¿½ï¿½Button OnClickï¿½j ===
         public void OnDeckClicked()
         {
+            if (drawLocked) return;
             if (_busy) return;
             if (!IsWasteEmpty()) { StartCoroutine(Shake(wasteCardRT)); return; }
             if (deckService && deckService.Remaining == 0) { StartCoroutine(Shake(deckCardRT)); return; }
@@ -73,10 +84,10 @@ namespace App.UI
         {
             if (!autoDrawAfterPlacement) return;
             if (_busy) return;
-            if (!IsWasteEmpty()) return;           // Šù‚É’l‚ªc‚Á‚Ä‚¢‚é‚È‚ç‰½‚à‚µ‚È‚¢
+            if (!IsWasteEmpty()) return;           // ï¿½ï¿½ï¿½É’lï¿½ï¿½ï¿½cï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½È‚ç‰½ï¿½ï¿½ï¿½ï¿½ï¿½È‚ï¿½
             if (deckService && deckService.Remaining == 0) return;
 
-            // ‚¿‚å‚Á‚ÆŠÔ‚ğ’u‚¢‚Ä‚©‚ç©“®ƒhƒ[
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÆŠÔ‚ï¿½uï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ç©ï¿½ï¿½ï¿½hï¿½ï¿½ï¿½[
             StartCoroutine(DrawWithAnim(0.08f));
         }
 
@@ -89,7 +100,7 @@ namespace App.UI
             _busy = true;
             UpdateDeckLabel();
 
-            // FlyCard‰‰o
+            // FlyCardï¿½ï¿½ï¿½o
             if (flyCard && canvasRT && deckCardRT && wasteCardRT)
             {
                 var t = flyCard.GetComponentInChildren<TMP_Text>();
@@ -111,7 +122,7 @@ namespace App.UI
 
             _busy = false;
 
-            // ƒhƒ[Œã‚É©“®’ñˆÄ‚µ‚½‚¯‚ê‚Î
+            // ï¿½hï¿½ï¿½ï¿½[ï¿½ï¿½Éï¿½ï¿½ï¿½ï¿½ï¿½Ä‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             if (autoSuggest) autoSuggest.OnWasteTapped();
         }
 

@@ -20,6 +20,8 @@ namespace App.UI
         public List<Image> dropHighlights;    // 各Column内のDropHighlight(Image)
         public float ghostAlpha = 0.85f;
 
+        public void SetEnabled(bool on) => enabled = on;
+
         RectTransform _ghostRT;
         CanvasGroup _ghostCg;
         

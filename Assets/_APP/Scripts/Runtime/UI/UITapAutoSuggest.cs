@@ -37,6 +37,8 @@ namespace App.UI
         [Header("Feedback")]
         public UIFlash wasteFlash;  // WasteCard 子の WasteFlash を割り当て
 
+        public void SetEnabled(bool on) => enabled = on;
+
         // ==== 公開API：Waste をタップ時に呼ぶ ====
         public void OnWasteTapped()
         {
