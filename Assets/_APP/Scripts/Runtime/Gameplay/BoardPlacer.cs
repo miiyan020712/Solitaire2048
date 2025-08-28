@@ -39,6 +39,12 @@ namespace App.Gameplay
         [Tooltip("合成時のパルス時間")]
         public float pulse = 0.12f;
 
+        [Header("Layout")]
+        [SerializeField] private int visualRowCapacity = 10;  // 画面に実際に入る段数（後でInspectorで調整）
+        public int VisualRowCapacity => visualRowCapacity;
+
+
+
         /// <summary>合成時に発火（合成後の最終値。例: 2+2→4 なら 4）</summary>
         public event System.Action<int> OnMerged;
         /// <summary>合成無しで新規配置したときに発火</summary>
@@ -347,6 +353,34 @@ System.Collections.IEnumerator PopIn(RectTransform rt)
         yield return null;
     }
     rt.localScale = to;
+}
+
+
+public int GetHeight(int col) => stacks[col].childCount;
+
+public bool CanPlaceAt(int col, int value, bool allowMergeOnSpawn)
+{
+    var s = stacks[col];
+    if (s.childCount == 0) return true;
+
+    // 先頭が最上段（AddAtTopでSetAsFirstSiblingしている想定）
+    var top = s.GetChild(0).GetComponent<CardView>();
+    int topVal = top.Value;
+
+    if (!allowMergeOnSpawn && value == topVal) return false; // 同値合成禁止ならNG
+    if (ruleSet.allowDescending && value > topVal) return false; // 降順ルール
+
+    return (value <= topVal);
+}
+
+public int GetStackCount(int column)
+{
+    return stacks[column].childCount;   // その列のカード枚数
+}
+
+public int GetChildCount(int col)
+{
+    return stacks[col].childCount;   // ← Stack の RectTransform の子数
 }
 
     }

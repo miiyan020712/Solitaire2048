@@ -1,53 +1,54 @@
 using UnityEngine;
-using UnityEngine.Events;
 using UnityEngine.UI;
 
-public class TimeBarController : MonoBehaviour
+namespace App.UI
 {
-    [Header("Refs")]
-    public Image fill;              // TimeBar_Fill をドラッグ
-    public Gradient colorByRatio;   // 空でもOK（任意）
-
-    [Header("Timer")]
-    public float duration = 5f;     // 1ウェーブの秒数
-    public bool autoStart = true;
-
-    [Header("Events")]
-    public UnityEvent onTimeout;    // 0になった時（次の段追加トリガー等）
-
-    float _t;        // 経過時間
-    bool _running;
-
-    void Start()
+    public class TimeBarController : MonoBehaviour
     {
-        if (autoStart) ResetAndStart();
-    }
+        [Header("Refs")]
+        public Image fill;           // TimeBar_Fill を割り当てる
 
-    void Update()
-    {
-        if (!_running || duration <= 0f) return;
+        [Header("State")]
+        [SerializeField] float duration = 5f;
 
-        _t += Time.deltaTime;
-        float ratio = Mathf.Clamp01(1f - _t / duration); // 1→0
-        if (fill) fill.fillAmount = ratio;
+        float t;
+        bool paused = true;
 
-        if (fill && colorByRatio != null)
-            fill.color = colorByRatio.Evaluate(ratio);
-
-        if (_t >= duration)
+        // RowSpawner から呼ばれる想定
+        public void Play(float seconds)
         {
-            _running = false;
-            onTimeout?.Invoke();    // ここで段追加の処理へ
+            duration = Mathf.Max(0.01f, seconds);
+            t = 0f;
+            paused = false;
+            UpdateFill();
+        }
+
+        public void Pause(bool pause = true)
+        {
+            paused = pause;
+        }
+
+        public void Stop()
+        {
+            paused = true;
+            t = duration;
+            UpdateFill();
+        }
+
+        void Update()
+        {
+            if (paused) return;
+            t += Time.deltaTime;
+            if (t > duration) t = duration;
+            UpdateFill();
+        }
+
+        void UpdateFill()
+        {
+            if (!fill) return;
+            // 左→右に縮む前提（Filled / Horizontal / Origin Left）
+            float ratio = Mathf.Clamp01(t / duration);
+            fill.fillAmount = 1f - ratio;
         }
     }
-
-    public void ResetAndStart(float? newDuration = null)
-    {
-        if (newDuration.HasValue) duration = Mathf.Max(0.01f, newDuration.Value);
-        _t = 0f;
-        if (fill) fill.fillAmount = 1f;
-        _running = true;
-    }
-
-    public void Pause(bool pause) => _running = !pause && duration > 0f;
 }

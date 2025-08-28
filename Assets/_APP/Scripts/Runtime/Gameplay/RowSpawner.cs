@@ -1,120 +1,157 @@
-using System.Linq;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+using App.UI;     
 
 namespace App.Gameplay
 {
-public class RowSpawner : MonoBehaviour
-{
-    [Header("Refs")]
-    public BoardPlacer board;          // 既存の配置管理
-    public TimeBarController timeBar;  // NF1-01で作成
-    public RuleSet ruleSet;            // 既存のルールアセット（MaxHeight使用）
-
-    [Header("Spawn Values (power of two)")]
-    public int minValue = 2;           // 2のべき乗のみ扱う前提
-    public int maxValue = 32;          // 32まで（調整可）
-    [Range(0f,1f)] public float emptyChancePerColumn = 0.25f; // 1列あたり「出現しない」確率
-    public bool snapToValid = true;    // 置けない値は自動で丸める（下げる）
-    public bool allowMergeOnSpawn = false; // 追加段では合成しない（基本false推奨）
-
-    [Header("Pacing")]
-    public float firstInterval = 5f;   // 開始間隔
-    public float minInterval   = 2f;   // 下限
-    public float accelPerRow   = -0.15f; // 1段ごとに間隔短縮量（-0.15秒ずつなど）
-
-    [Header("Events (optional)")]
-    public UnityEngine.Events.UnityEvent onGameOver;
-
-    int rowsSpawned = 0;
-
-    void OnEnable()
+    /// <summary>
+    /// 一定間隔で上段に1行スポーンさせる。
+    /// ・値は「下げない」…行を出すごとに最小値を段階的に引き上げる
+    /// ・GameOver は列の枚数（childCount）で即時判定
+    /// </summary>
+    public class RowSpawner : MonoBehaviour
     {
-        if (timeBar) timeBar.onTimeout.AddListener(OnTimeout);
-    }
-    void OnDisable()
-    {
-        if (timeBar) timeBar.onTimeout.RemoveListener(OnTimeout);
-    }
-    void Start()
-    {
-        RestartTimer();
-    }
+        [Header("Refs")]
+        public BoardPlacer board;                 // BoardPlacer をドラッグ
+        public TimeBarController timeBar;         // TimeBar_BG 側の TimeBarController
+        public RuleSet ruleSet;                   // 使用中の RuleSet
 
-    void OnTimeout()
-    {
-        AddRow();
-        rowsSpawned++;
-        RestartTimer();
-    }
+        [Header("Spawn Values (power of two)")]
+        public int minValue = 2;                  // 初期の最小値（2）
+        public int maxValue = 32;                 // 最高32まで
+        [Range(0f, 1f)] public float emptyChancePerColumn = 0.25f;
+        public bool snapToValid = true;           // 使わない場合も true でOK（今回は単純に置く）
+        public bool allowMergeOnSpawn = false;    // スポーン直後に合成させたいなら true
 
-    void RestartTimer()
-    {
-        if (!timeBar) return;
-        float next = Mathf.Max(minInterval, firstInterval + accelPerRow * rowsSpawned);
-        timeBar.ResetAndStart(next);
-    }
+        [Header("Pacing")]
+        public float firstInterval = 5f;          // 最初の間隔
+        public float minInterval = 2f;            // 最小間隔
+        public float accelPerRow = -0.15f;        // 行ごとに短くする値（負で加速）
 
-    // ---- 段の追加本体 ----
-    public void AddRow()
-    {
-        if (!board) return;
+        [Header("Events (optional)")]
+        public UnityEvent onGameOver;
 
-        for (int col = 0; col < board.ColumnCount; col++)
+        // ---- runtime ----
+        bool _gameOver;
+        float _interval;
+        int _rowsSpawned;
+        int _currentMin;                          // 「下げない」ための下限
+        readonly int[] _pow2 = { 2,4,8,16,32,64,128,256,512,1024,2048 };
+
+        void OnEnable()
         {
-            // もう一杯なら何もしない（後でGameOver判定）
-            if (board.GetColumnCount(col) >= ruleSet.maxHeight) continue;
+            _gameOver = false;
+            _rowsSpawned = 0;
+            _currentMin = Mathf.Clamp(minValue, 2, maxValue);
+            _interval = firstInterval;
 
-            // 空列にするか？
-            if (Random.value < emptyChancePerColumn) continue;
+            StopAllCoroutines();
+            StartCoroutine(SpawnLoop());
+        }
 
-            int v = RollValue();
-            if (snapToValid)
+        IEnumerator SpawnLoop()
+        {
+            // 1フレーム待って参照の遅延を回避
+            yield return null;
+
+if (timeBar) timeBar.Play(_interval);   // ← 追加（初回分）
+while (!_gameOver)
+{
+    // 先頭の Play はそのままでも OK、二重に回したくなければここは消しても良い
+    // if (timeBar) timeBar.Play(_interval);
+
+    yield return new WaitForSeconds(_interval);
+    if (_gameOver) yield break;
+
+    SpawnOneRow();
+
+    if ((_rowsSpawned + 1) % 4 == 0 && _currentMin < maxValue)
+        _currentMin = Mathf.Min(maxValue, _currentMin * 2);
+
+    _rowsSpawned++;
+    _interval = Mathf.Max(minInterval, _interval + accelPerRow);
+
+    // 次ループを待たずに“新しい間隔”で即リセットしたい場合はここで Play
+    // if (timeBar) timeBar.Play(_interval);
+}
+
+        }
+
+        void SpawnOneRow()
+        {
+            if (board == null) return;
+
+            int cols = board.ColumnCount;
+
+            for (int c = 0; c < cols; c++)
             {
-                v = SnapValueForColumn(col, v);
-                if (v <= 0) continue; // どうしても置けない場合はスキップ
+                // 空にするスロット
+                if (Random.value < emptyChancePerColumn) continue;
+
+                int value = NextSpawnValue();
+
+                // 上段にスポーン（見た目の一番上。合成は allowMergeOnSpawn で選択）
+                board.AddAtTop(c, value, animate: true, allowMergeOnSpawn: allowMergeOnSpawn);
             }
 
-            board.AddAtTop(col, v, animate: true, allowMergeOnSpawn: allowMergeOnSpawn);
+            // スポーン直後に即時判定（見た目やレイアウトに依存しない）
+            if (ReachedLimit())
+            {
+                GameOver();
+            }
         }
 
-        // 追加後に敗北チェック
-        if (board.AnyColumnAtOrAbove(ruleSet.maxHeight))
+        int NextSpawnValue()
         {
-            if (onGameOver != null) onGameOver.Invoke();
-            // TODO: NF4 でゲームオーバー演出へ遷移
+            // 下限 _currentMin ～ 上限 maxValue のパワーオブツーからランダム
+            var choices = GetPow2Range(_currentMin, maxValue);
+            // 念のため保険
+            if (choices.Count == 0) return _currentMin;
+
+            int idx = Random.Range(0, choices.Count);
+            return choices[idx];
         }
-    }
 
-    // 2,4,8,16,32 から重み付きランダム（軽く低い値を出やすく）
-    int RollValue()
-    {
-        int[] pool = new[] { 2, 4, 8, 16, 32 }
-            .Where(x => x >= minValue && x <= maxValue).ToArray();
-
-        // 低い値ほど出やすく：weight = 1 / log2(value)
-        float[] w = pool.Select(x => 1f / Mathf.Log(x, 2f)).ToArray();
-        float sum = w.Sum();
-        float r = Random.value * sum;
-        float acc = 0f;
-        for (int i = 0; i < pool.Length; i++)
+        List<int> GetPow2Range(int from, int to)
         {
-            acc += w[i];
-            if (r <= acc) return pool[i];
+            var list = new List<int>(8);
+            for (int i = 0; i < _pow2.Length; i++)
+            {
+                int v = _pow2[i];
+                if (v >= from && v <= to) list.Add(v);
+            }
+            return list;
         }
-        return pool[pool.Length - 1];
-    }
 
-    // 置けない値は「top以下」になるまで半減して合わせる
-    int SnapValueForColumn(int col, int v)
+bool ReachedLimit()
+{
+    // RuleSet より見た目優先。両方あるなら小さい方を使うのもアリ
+    int uiLimit = (board != null) ? board.VisualRowCapacity : 12;
+    int ruleLimit = (ruleSet != null) ? ruleSet.maxHeight : 999;
+    int limit = Mathf.Min(uiLimit, ruleLimit);
+
+    int cols = board.ColumnCount;
+    for (int c = 0; c < cols; c++)
     {
-        int count = board.GetColumnCount(col);
-        if (count == 0) return v; // 空列は何でもOK（今回のルール）
-
-        int top = board.GetTopValue(col); // 列の最上段（見た目の上側）値
-        if (v <= top) return v;
-
-        while (v > top && v > 2) v /= 2; // 2まで下げて試す
-        return (v <= top) ? v : -1;
+        if (board.GetStackCount(c) >= limit)   // ← childCount で即判定
+            return true;
     }
+    return false;
 }
+
+        void GameOver()
+        {
+            if (_gameOver) return;
+            _gameOver = true;
+
+            // タイムバー停止（Pause(true) を明示）
+            if (timeBar != null) timeBar.Pause(true);
+
+            enabled = false;
+            onGameOver?.Invoke();
+            Debug.Log("[RowSpawner] GAME OVER");
+        }
+    }
 }
