@@ -345,7 +345,6 @@ MonoBehaviour:
   pulse: 0.12
   visualRowCapacity: 10
   inputLocked: 0
-  dragGhost: {fileID: 31332911}
 --- !u!114 &31332908
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -953,7 +952,7 @@ MonoBehaviour:
   emptyChancePerColumn: 0.25
   snapToValid: 1
   allowMergeOnSpawn: 0
-  firstInterval: 1
+  firstInterval: 5
   minInterval: 2
   accelPerRow: 0
   onGameOver:
@@ -4235,30 +4234,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 5207066472135120742, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5207066472135120742, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5207066472135120742, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5207066472135120742, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5207066472135120742, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5207066472135120742, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 6538829885925431495, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -4289,10 +4264,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7686380987557868620, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7686380987557868620, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_SizeDelta.x
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7686380987557868620, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
@@ -4328,30 +4299,6 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8186904806871043655, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8973190228993686290, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_AnchorMax.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8973190228993686290, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_AnchorMin.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8973190228993686290, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_SizeDelta.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8973190228993686290, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8973190228993686290, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-      propertyPath: m_AnchoredPosition.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8973190228993686290, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
@@ -4400,9 +4347,7 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects:
-    - {fileID: 8680190088096620995, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
-    - {fileID: 5526516268066459063, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
+    m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: fc6471feeacb43748b1451c83ecdec0b, type: 3}
