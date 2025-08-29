@@ -136,7 +136,6 @@ GameObject:
   - component: {fileID: 31332899}
   - component: {fileID: 31332904}
   - component: {fileID: 31332905}
-  - component: {fileID: 31332906}
   - component: {fileID: 31332907}
   - component: {fileID: 31332908}
   - component: {fileID: 31332910}
@@ -318,18 +317,6 @@ MonoBehaviour:
   - {fileID: 1192319970}
   - {fileID: 977432937}
   wasteFlash: {fileID: 0}
---- !u!114 &31332906
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 31332898}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e1de3a9c7b8bae4d92fadb14c0c0a41, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!114 &31332907
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -358,7 +345,7 @@ MonoBehaviour:
   pulse: 0.12
   visualRowCapacity: 10
   inputLocked: 0
-  dragGhost: {fileID: 0}
+  dragGhost: {fileID: 31332911}
 --- !u!114 &31332908
 MonoBehaviour:
   m_ObjectHideFlags: 0

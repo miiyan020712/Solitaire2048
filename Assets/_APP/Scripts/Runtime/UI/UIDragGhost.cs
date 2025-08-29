@@ -53,10 +53,33 @@ namespace App.UI
         int _fromCol = -1;
         int _fromValue = 0;
 
-        void Awake()
+void Awake()
+{
+    // Canvas を特定（未設定でも親から拾う）
+    if (canvasRT == null) canvasRT = GetComponentInParent<Canvas>()?.GetComponent<RectTransform>();
+    _canvas = canvasRT ? canvasRT.GetComponentInParent<Canvas>() : GetComponentInParent<Canvas>();
+    _eventCam = GetUICamera(); // 初期値
+
+    // ドロップハイライトはレイを奪わない & ThemeImage があれば無効化（色が上書きされるため）
+    if (dropHighlights != null)
+    {
+        foreach (var img in dropHighlights)
         {
-            _canvas = canvasRT ? canvasRT.GetComponentInParent<Canvas>() : GetComponentInParent<Canvas>();
+            if (!img) continue;
+            img.raycastTarget = false;
+
+            // ThemeImage が色を上書きしていると赤/シアンに変えられない
+            var ti = img.GetComponent<App.UI.Themeing.ThemeImage>();
+            if (ti) ti.enabled = false;
         }
+    }
+
+    // 配列長がズレていたら気づけるようログ
+    if (columns != null && dropHighlights != null && columns.Count != dropHighlights.Count)
+    {
+        Debug.LogWarning($"[UIDragGhost] columns({columns.Count})とdropHighlights({dropHighlights.Count})の数が一致していません。", this);
+    }
+}
 
         Camera GetUICamera()
         {
@@ -199,6 +222,8 @@ namespace App.UI
             _ghostRT.sizeDelta = new Vector2(100, 140);
             _ghostCg = go.AddComponent<CanvasGroup>();
             _ghostCg.alpha = ghostAlpha;
+            _ghostCg.blocksRaycasts = false;      // ★ 追加：ドラッグ中にUIを塞がない
+            _ghostCg.ignoreParentGroups = true;   // ★ 追加
             _ghostCg.blocksRaycasts = false; // ★
             _ghostCg.interactable = false;   // ★
 
@@ -258,28 +283,40 @@ namespace App.UI
         }
 
         /// <summary>列トップドラッグ終了（ドロップ）。</summary>
-        public void EndFromColumn(Vector2 screenPos)
+public void EndFromColumn(Vector2 screenPos)
+{
+    if (_source != DragSource.Column) return;
+
+    // 指を離した位置で再評価（最後の OnDrag から少しズレることがあるため）
+    EvaluateHover(screenPos, _fromValue, fromColumn: true, fromCol: _fromCol,
+                  out var target, out var legal);
+
+    // 旧ハイライト消灯
+    SetHighlight(_hoverIndex, false, _hoverLegal);
+    // 念のためターゲット側も消灯
+    if (target != _hoverIndex) SetHighlight(target, false, legal);
+
+    bool moved = false;
+    if (boardPlacer && legal && target >= 0 && target != _fromCol)
+    {
+        // もう一度最終チェック（UIの食い違い防止）
+        if (boardPlacer.CanMoveTop(_fromCol, target, out _))
         {
-            if (_source != DragSource.Column) return;
-
-            // 旧ハイライト消灯
-            SetHighlight(_hoverIndex, false, _hoverLegal);
-
-            if (_hoverIndex >= 0 && _hoverLegal && boardPlacer)
-            {
-                // 移動確定：合体・連鎖は BoardPlacer.MoveTop に委譲
-                if (!boardPlacer.MoveTop(_fromCol, _hoverIndex, animate: true, out var _))
-                {
-                    if (wasteFlash) wasteFlash.Play(); // 失敗時の簡易フィードバック
-                }
-            }
-
-            // ゴースト破棄
-            if (_ghostRT) StartCoroutine(FlyBackAndKill());
-
-            _source = DragSource.None;
-            _fromCol = -1;
+            moved = boardPlacer.MoveTop(_fromCol, target, animate: true, out _);
         }
+    }
+
+    if (!moved && wasteFlash) wasteFlash.Play();
+
+    // ゴースト破棄（戻しアニメいらなければ Destroy でもOK）
+    if (_ghostRT) StartCoroutine(FlyBackAndKill());
+
+    // リセット
+    _hoverIndex = -1;
+    _hoverLegal = false;
+    _source = DragSource.None;
+    _fromCol = -1;
+}
 
         // ---------------------------------------------------------
         // 共通：ホバー判定

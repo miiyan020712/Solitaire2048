@@ -1,19 +1,18 @@
-using App.Gameplay;
-using App.UI;
 using System.Collections;
 using TMPro;
 using UnityEngine;
-using CardView = App.UI.Themeing.CardView;
+using UnityEngine.UI;                       // ← 追加（VerticalLayoutGroup 参照/並び制御）
+using CardView = App.UI.Themeing.CardView; // カード見た目
+using App.Gameplay;
 
 namespace App.Gameplay
 {
     /// <summary>
     /// ボードへの配置＆合成を担当。
-    /// - placeAtBottom=true：各列の「最下段」にプレースして下から迎撃（推奨）
-    ///   * Stack(VerticalLayoutGroup) は「Reverse Arrangement」を ON にしておくと見た目が合う
-    ///   * 同値は“下から”連鎖吸収（連続する同値だけが対象）
+    /// - placeAtBottom=true：各列の「最下段」にプレースして下から迎撃
     /// - placeAtBottom=false：従来の“最上段”にプレースして上から合成
     /// - OnMerged / OnPlacedNoMerge を発火（ScoreSystem などが購読）
+    /// - Reverse Arrangement の ON/OFF を自動吸収（見た目の「手前」を常に取得）
     /// </summary>
     public class BoardPlacer : MonoBehaviour
     {
@@ -21,7 +20,7 @@ namespace App.Gameplay
         [Tooltip("各列の Stack（左→右）")]
         public RectTransform[] stacks;
 
-        [Tooltip("CardView のプレハブ（子に TMP_Text がある想定）")]
+        [Tooltip("CardView のプレハブ")]
         public GameObject cardViewPrefab;
 
         [Tooltip("Waste の数値テキスト（BottomBar/WasteView/WasteValue）")]
@@ -41,16 +40,12 @@ namespace App.Gameplay
         public float pulse = 0.12f;
 
         [Header("Layout")]
-        [SerializeField] private int visualRowCapacity = 10;  // 画面に実際に入る段数（後でInspectorで調整）
+        [SerializeField] private int visualRowCapacity = 10;  // 画面に実際に入る段数（RowSpawner が参照）
         public int VisualRowCapacity => visualRowCapacity;
 
-        [Header("Lock")] public bool inputLocked = false;
+        [Header("Lock")] 
+        public bool inputLocked = false;
         public void SetLocked(bool v) => inputLocked = v;
-
-        [Header("Drag")]
-        public UIDragGhost dragGhost;   // ← インスペクタで UIDragGhost をドラッグ
-
-
 
         /// <summary>合成時に発火（合成後の最終値。例: 2+2→4 なら 4）</summary>
         public event System.Action<int> OnMerged;
@@ -61,7 +56,7 @@ namespace App.Gameplay
         public int LastPlacedColumnIndex { get; private set; } = -1;
 
         // ======================================================
-        // Public API
+        // Public API（デッキからの配置）
         // ======================================================
 
         /// <summary>
@@ -70,12 +65,11 @@ namespace App.Gameplay
         /// </summary>
         public bool TryPlaceAt(int columnIndex)
         {
-            if (inputLocked) return false; // or return;
-
+            if (inputLocked) return false;
             if (!IsReady() || columnIndex < 0 || columnIndex >= stacks.Length)
                 return false;
 
-            if (!int.TryParse(wasteValue?.text, out int value))
+            if (!int.TryParse(wasteValue ? wasteValue.text : null, out int value))
                 return false;
 
             LastPlacedColumnIndex = columnIndex;
@@ -86,9 +80,7 @@ namespace App.Gameplay
                 return TryPlaceFromTop(columnIndex, value);
         }
 
-        /// <summary>
-        /// すべての Stack を空にする（エディタ・デバッグ用）。
-        /// </summary>
+        /// <summary>すべての Stack を空にする（エディタ・デバッグ用）。</summary>
         public void ClearAllStacks()
         {
             if (stacks == null) return;
@@ -114,51 +106,44 @@ namespace App.Gameplay
         /// </summary>
         bool TryPlaceFromBottom(int columnIndex, int value)
         {
-            if (inputLocked) return false; // or return;
+            if (inputLocked) return false;
+
             var st = stacks[columnIndex];
             if (!st) return false;
 
-            // 迎撃モードでは MoveValidator を通さず常にOK（ゲームデザイン側で制御）
             int merged = value;
             bool mergedAtLeastOnce = false;
 
-            // A) 既存の“最下段から”見て、連続する同値をすべて吸収→倍化
+            // 既存最下段から連続する同値を吸収
             while (true)
             {
-                var t = BottomText(columnIndex);
-                if (t && int.TryParse(t.text, out int bVal) && bVal == merged)
+                var bRT = GetBottomRT(columnIndex);
+                if (!bRT) break;
+
+                int bVal = ReadValue(bRT);
+                if (bVal == merged)
                 {
-                    // 下端カードを即座に列から外して破棄（Destroy遅延対策）
-                    var bottomRoot = t.transform.parent as RectTransform;
-                    if (bottomRoot)
-                    {
-                        bottomRoot.SetParent(null, false);
-                        Destroy(bottomRoot.gameObject);
-                    }
+                    // 列から外して破棄（Destroy遅延対策）
+                    bRT.SetParent(null, false);
+                    Destroy(bRT.gameObject);
+
                     merged *= 2;
                     mergedAtLeastOnce = true;
-
-                    // 連鎖を強めたい場合は、この時点でパルスを出してもOK
                 }
                 else break;
             }
 
-            // B) 最終値を“最下段”に新規挿入（SetSiblingIndex(0)）
-            var go = Instantiate(cardViewPrefab, st);
-            var tmp = go.GetComponentInChildren<TMP_Text>();
-            if (tmp) tmp.text = merged.ToString();
-            go.transform.SetSiblingIndex(0); // ★ これで見た目の下端に来る（Reverse Arrangement 前提）
+            // 最終値を最下段に新規挿入
+            var go = Instantiate(cardViewPrefab).GetComponent<RectTransform>();
+            WriteValue(go, merged);
+            PlaceAsBottom(go, st);                 // ← 並び順に応じた「最下段」へ
+            StartCoroutine(Pop(go));
 
-            var rt = go.GetComponent<RectTransform>();
-            if (rt) StartCoroutine(Pop(rt));
-
-            // C) 演出・通知・後処理
             ClearWaste();
             if (mergedAtLeastOnce)
             {
-                // “段階ごと”に加点したい場合は、上の while 内で Invoke する方式に変更可
                 OnMerged?.Invoke(merged);
-                if (rt) StartCoroutine(Pulse(rt));
+                StartCoroutine(Pulse(GetTopRT(columnIndex) ?? go)); // 演出的にトップ/今入れた方へ
             }
             else
             {
@@ -166,14 +151,6 @@ namespace App.Gameplay
             }
 
             return true;
-        }
-
-        TMP_Text BottomText(int col)
-        {
-            var st = stacks[col];
-            if (!st || st.childCount == 0) return null;
-            var bottom = st.GetChild(0);
-            return bottom.GetComponentInChildren<TMP_Text>();
         }
 
         // ======================================================
@@ -185,7 +162,8 @@ namespace App.Gameplay
         /// </summary>
         bool TryPlaceFromTop(int columnIndex, int value)
         {
-            if (inputLocked) return false; // or return;
+            if (inputLocked) return false;
+
             // 合法判定（BoardState/MoveValidator を利用）
             var state = new BoardState(stacks);
             if (!MoveValidator.CanPlace(columnIndex, value, state, ruleSet, out _))
@@ -194,33 +172,30 @@ namespace App.Gameplay
             // 1) 最上段と同値ならその場で合成（連鎖あり）
             if (ruleSet != null && ruleSet.allowEqualMerge)
             {
-                var topText = TopText(columnIndex);
-                if (topText && int.TryParse(topText.text, out int topVal) && topVal == value)
+                var topRT = GetTopRT(columnIndex);
+                if (topRT && ReadValue(topRT) == value)
                 {
                     int merged = value * 2;
-                    topText.text = merged.ToString();
-                    StartCoroutine(Pulse(topText.rectTransform));
+                    WriteValue(topRT, merged);
+                    StartCoroutine(Pulse(topRT));
 
                     if (ruleSet.allowChainMerge)
                     {
+                        // その下（見た目で2番手）と連鎖
                         while (true)
                         {
-                            var below = BelowTopText(columnIndex);
-                            if (!below) break;
+                            var belowRT = GetSecondTopRT(columnIndex);
+                            if (!belowRT) break;
 
-                            if (int.TryParse(below.text, out int bVal) && bVal == merged)
+                            int bVal = ReadValue(belowRT);
+                            if (bVal == merged)
                             {
-                                // 直下を列から外してから破棄（Destroy遅延対策）
-                                var belowRoot = below.transform.parent as RectTransform;
-                                if (belowRoot)
-                                {
-                                    belowRoot.SetParent(null, false);
-                                    Destroy(belowRoot.gameObject);
-                                }
+                                belowRT.SetParent(null, false);
+                                Destroy(belowRT.gameObject);
 
                                 merged *= 2;
-                                topText.text = merged.ToString();
-                                StartCoroutine(Pulse(topText.rectTransform));
+                                WriteValue(topRT, merged);
+                                StartCoroutine(Pulse(topRT));
                             }
                             else break;
                         }
@@ -234,37 +209,348 @@ namespace App.Gameplay
 
             // 2) 合成しない場合は普通に最上段に追加
             var stack = stacks[columnIndex];
-            var go = Instantiate(cardViewPrefab, stack);
-            var tmp = go.GetComponentInChildren<TMP_Text>();
-            if (tmp) tmp.text = value.ToString();
-
-            var rt = go.GetComponent<RectTransform>();
-            if (rt) StartCoroutine(Pop(rt));
+            var go = Instantiate(cardViewPrefab).GetComponent<RectTransform>();
+            WriteValue(go, value);
+            PlaceAsTop(go, stack);
+            StartCoroutine(Pop(go));
 
             ClearWaste();
             OnPlacedNoMerge?.Invoke();
             return true;
         }
 
-        TMP_Text TopText(int col)
+        // ======================================================
+        // 列トップ移動（列→列ドラッグ用）
+        // ======================================================
+
+public bool MoveTop(int fromCol, int toCol, bool animate, out bool merged)
+{
+    merged = false;
+    if (fromCol == toCol) return false;
+
+    var from = stacks[fromCol];
+    var to   = stacks[toCol];
+    if (!from || !to || from.childCount == 0) return false;
+
+    // 移動元トップ（見た目の上端は index 0）
+    var topRoot = from.GetChild(0) as RectTransform;
+    var topCV   = topRoot.GetComponent<CardView>();
+    int value   = topCV ? topCV.Value : 0;
+
+    // まず元から外す（Destroy 遅延の影響を避ける）
+    topRoot.SetParent(null, worldPositionStays: false);
+
+    // 合体判定：移動先のトップが同値なら吸収 → 連鎖
+    bool didMerge = false;
+    int outValue = value;
+
+    if (ruleSet != null && ruleSet.allowEqualMerge && to.childCount > 0)
+    {
+        var dstTopRoot = to.GetChild(0);
+        var dstTopCV   = dstTopRoot.GetComponent<CardView>();
+        if (dstTopCV && dstTopCV.Value == outValue)
+        {
+            // 先に先頭を外して破棄
+            dstTopRoot.SetParent(null, false);
+            Destroy(dstTopRoot.gameObject);
+
+            outValue *= 2;
+            didMerge = true;
+
+            if (ruleSet.allowChainMerge)
+            {
+                while (to.childCount > 0)
+                {
+                    var nextRoot = to.GetChild(0);
+                    var nextCV   = nextRoot.GetComponent<CardView>();
+                    if (nextCV && nextCV.Value == outValue)
+                    {
+                        nextRoot.SetParent(null, false);
+                        Destroy(nextRoot.gameObject);
+                        outValue *= 2;
+                    }
+                    else break;
+                }
+            }
+        }
+    }
+
+    // 最終的なカードを作る/更新して「見た目の先頭」に差し込む
+    var cv = topCV ? topCV : topRoot.GetComponent<CardView>();
+    if (!cv) cv = topRoot.gameObject.AddComponent<CardView>();
+    cv.SetValue(outValue);
+
+    topRoot.SetParent(to, false);
+    topRoot.SetAsFirstSibling();                 // ★ 先頭（見た目の上）に来るよう固定
+    if (animate) StartCoroutine(Pop(topRoot));   // 軽いポップ
+
+    // ドラッグハンドルの列番号を更新（付いている場合）
+    var handle = topRoot.GetComponentInChildren<TopCardHandle>(true);
+    if (handle)
+    {
+        handle.columnIndex = toCol;
+        handle.board       = this;
+        if (!handle.cardView) handle.cardView = cv;
+    }
+
+    ClearWaste(); // （好み）移動でも Waste を空にしたい場合
+
+    if (didMerge)
+    {
+        merged = true;
+        OnMerged?.Invoke(outValue);
+        StartCoroutine(Pulse(topRoot));
+    }
+    else
+    {
+        OnPlacedNoMerge?.Invoke();
+    }
+    return true;
+}
+
+// 移動の合法判定（列トップ → 別列）
+public bool CanMoveTop(int fromCol, int toCol, out bool willMerge)
+{
+    willMerge = false;
+    if (fromCol == toCol) return false;
+
+    var from = stacks[fromCol];
+    var to   = stacks[toCol];
+    if (!from || from.childCount == 0) return false;
+
+    // 移動元トップ値（index 0）
+    var srcCV = from.GetChild(0).GetComponent<CardView>();
+    if (!srcCV) return false;
+    int v = srcCV.Value;
+
+    if (!to || to.childCount == 0) return true; // 空列OK
+
+    var dstCV = to.GetChild(0).GetComponent<CardView>();
+    if (!dstCV) return true;
+
+    if (ruleSet != null && ruleSet.allowEqualMerge && v == dstCV.Value)
+    {
+        willMerge = true;
+        return true;
+    }
+    if (ruleSet != null && ruleSet.allowDescending && v > dstCV.Value)
+        return false; // 降順違反
+
+    return (v <= dstCV.Value);
+}
+
+        // ======================================================
+        // RowSpawner からの行生成で使用
+        // ======================================================
+
+        /// <summary>段生成用：列の最上段にカードを追加（基本合成しない）</summary>
+        public void AddAtTop(int col, int value, bool animate = true, bool allowMergeOnSpawn = false)
+        {
+            var stack = stacks[col];
+            var cardRT = Instantiate(cardViewPrefab).GetComponent<RectTransform>();
+            WriteValue(cardRT, value);
+
+            PlaceAsTop(cardRT, stack);                 // 並び順に応じて自動調整
+            if (animate) StartCoroutine(PopIn(cardRT));
+            LayoutRebuilder.ForceRebuildLayoutImmediate(stack); // ★ 追加
+
+            if (allowMergeOnSpawn)
+            {
+                var top = GetTopRT(col);
+                var below = GetSecondTopRT(col);
+                if (top && below && ReadValue(top) == ReadValue(below))
+                {
+                    int merged = ReadValue(top) * 2;
+                    below.SetParent(null, false);
+                    Destroy(below.gameObject);
+                    WriteValue(top, merged);
+                    StartCoroutine(Pulse(top));
+
+                    if (ruleSet != null && ruleSet.allowChainMerge)
+                    {
+                        while (true)
+                        {
+                            var b2 = GetSecondTopRT(col);
+                            if (!b2) break;
+                            int bv = ReadValue(b2);
+                            if (bv == merged)
+                            {
+                                b2.SetParent(null, false);
+                                Destroy(b2.gameObject);
+                                merged *= 2;
+                                WriteValue(top, merged);
+                                StartCoroutine(Pulse(top));
+                            }
+                            else break;
+                        }
+                    }
+
+                    OnMerged?.Invoke(merged);
+                }
+            }
+        }
+
+        /// <summary>その列に Waste を置けるか（合体許可=allowMergeOnSpawn）</summary>
+        public bool CanPlaceAt(int col, int value, bool allowMergeOnSpawn)
+        {
+            var s = stacks[col];
+            if (!s || s.childCount == 0) return true;
+
+            var top = GetTopRT(col);
+            int topVal = ReadValue(top);
+
+            if (!allowMergeOnSpawn && ruleSet != null && ruleSet.allowEqualMerge && value == topVal)
+                return false; // 同値合成禁止ならNG
+
+            if (ruleSet != null && ruleSet.allowDescending && value > topVal) 
+                return false; // 降順ルール
+
+            return (value <= topVal);
+        }
+
+        // ======================================================
+        // 情報取得（RowSpawner/判定補助）
+        // ======================================================
+
+        public int ColumnCount => stacks != null ? stacks.Length : 0;
+
+        public int GetStackCount(int col) => stacks[col].childCount;
+
+        public int GetChildCount(int col) => GetStackCount(col);
+        public int GetHeight(int col) => GetStackCount(col);
+
+        /// <summary>その列の「最上段（見た目の先頭）」の値</summary>
+public int GetTopValue(int col)
+{
+    var s = stacks[col];
+    if (!s || s.childCount == 0) return int.MaxValue; // 空列は何でも載る扱い
+    var top = s.GetChild(0).GetComponent<CardView>();
+    return top ? top.Value : int.MaxValue;
+}
+
+        /// <summary>高さが threshold 以上の列があるか</summary>
+        public bool AnyColumnAtOrAbove(int threshold)
+        {
+            if (stacks == null) return false;
+            for (int i = 0; i < stacks.Length; i++)
+                if (stacks[i] && stacks[i].childCount >= threshold) return true;
+            return false;
+        }
+
+        // ======================================================
+        // Helpers（並び順/値の読み書き/テキスト互換）
+        // ======================================================
+
+        bool IsReverse(RectTransform st)
+        {
+            var vg = st ? st.GetComponent<VerticalLayoutGroup>() : null;
+            return vg != null && vg.reverseArrangement;
+        }
+
+        int TopIndex(RectTransform st)
+        {
+            if (!st || st.childCount == 0) return 0;
+            return IsReverse(st) ? st.childCount - 1 : 0;
+        }
+
+        int SecondTopIndex(RectTransform st)
+        {
+            if (!st || st.childCount < 2) return -1;
+            return IsReverse(st) ? st.childCount - 2 : 1;
+        }
+
+        int BottomIndex(RectTransform st)
+        {
+            if (!st || st.childCount == 0) return 0;
+            return IsReverse(st) ? 0 : st.childCount - 1;
+        }
+
+        RectTransform GetTopRT(int col)
         {
             var st = stacks[col];
             if (!st || st.childCount == 0) return null;
-            var top = st.GetChild(st.childCount - 1);
-            return top.GetComponentInChildren<TMP_Text>();
+            return st.GetChild(TopIndex(st)) as RectTransform;
+        }
+
+        RectTransform GetSecondTopRT(int col)
+        {
+            var st = stacks[col];
+            int idx = SecondTopIndex(st);
+            if (idx < 0) return null;
+            return st.GetChild(idx) as RectTransform;
+        }
+
+        RectTransform GetBottomRT(int col)
+        {
+            var st = stacks[col];
+            if (!st || st.childCount == 0) return null;
+            return st.GetChild(BottomIndex(st)) as RectTransform;
+        }
+
+        void PlaceAsTop(RectTransform child, RectTransform parent)
+        {
+            child.SetParent(parent, false);
+            if (IsReverse(parent)) child.SetAsLastSibling();
+            else child.SetAsFirstSibling();
+        }
+
+        void PlaceAsBottom(RectTransform child, RectTransform parent)
+        {
+            child.SetParent(parent, false);
+            if (IsReverse(parent)) child.SetAsFirstSibling();
+            else child.SetAsLastSibling();
+        }
+
+        int ReadValue(RectTransform rt)
+        {
+            // CardView 優先
+            var cv = rt ? rt.GetComponent<CardView>() : null;
+            if (cv != null)
+            {
+                // CardView には Value プロパティがある前提
+                var valField = typeof(CardView).GetField("value", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (valField != null) return (int)valField.GetValue(cv); // 既存実装に合わせる
+            }
+
+            // フォールバック：子の TMP_Text
+            var txt = rt ? rt.GetComponentInChildren<TMP_Text>() : null;
+            if (txt && int.TryParse(txt.text, out int v)) return v;
+
+            return 0;
+        }
+
+        void WriteValue(RectTransform rt, int v)
+        {
+            // CardView 優先
+            var cv = rt ? rt.GetComponent<CardView>() : null;
+            if (cv != null)
+            {
+                var m = typeof(CardView).GetMethod("SetValue", new[] { typeof(int) });
+                if (m != null) { m.Invoke(cv, new object[] { v }); return; }
+            }
+
+            // フォールバック：子の TMP_Text
+            var txt = rt ? rt.GetComponentInChildren<TMP_Text>() : null;
+            if (txt) txt.text = v.ToString();
+        }
+
+        TMP_Text TopText(int col)
+        {
+            var rt = GetTopRT(col);
+            return rt ? rt.GetComponentInChildren<TMP_Text>() : null;
         }
 
         TMP_Text BelowTopText(int col)
         {
-            var st = stacks[col];
-            if (!st || st.childCount < 2) return null;
-            var below = st.GetChild(st.childCount - 2);
-            return below.GetComponentInChildren<TMP_Text>();
+            var rt = GetSecondTopRT(col);
+            return rt ? rt.GetComponentInChildren<TMP_Text>() : null;
         }
 
-        // ======================================================
-        // Helpers
-        // ======================================================
+        TMP_Text BottomText(int col)
+        {
+            var rt = GetBottomRT(col);
+            return rt ? rt.GetComponentInChildren<TMP_Text>() : null;
+        }
 
         bool IsReady()
         {
@@ -313,254 +599,7 @@ namespace App.Gameplay
             rt.localScale = b;
         }
 
-        // 列数
-        public int ColumnCount => stacks.Length;
-
-        // その列のカード数（CardView 子オブジェクト数ベース）
-        public int GetColumnCount(int col) => stacks[col].childCount;
-
-        // その列の「最上段（見た目の上）」の値
-        public int GetTopValue(int col)
-        {
-            var stack = stacks[col];
-            if (stack.childCount == 0) return int.MaxValue; // 空列は何でも載る扱い
-            var topCard = stack.GetChild(0).GetComponent<CardView>();
-            return topCard ? topCard.Value : int.MaxValue;
-        }
-
-        // その列の高さが threshold 以上のものがあるか
-        public bool AnyColumnAtOrAbove(int threshold)
-        {
-            for (int i = 0; i < stacks.Length; i++)
-                if (stacks[i].childCount >= threshold) return true;
-            return false;
-        }
-
-        // 段生成用：列の最上段にカードを追加（基本合成しない）
-        public void AddAtTop(int col, int value, bool animate = true, bool allowMergeOnSpawn = false)
-        {
-            var stack = stacks[col];
-            var card = Instantiate(cardViewPrefab, stack);
-            card.SetValue(value);
-
-            // 見た目の「上」に来るよう先頭に移動
-            card.transform.SetAsFirstSibling();
-
-            // ここ！ () を付ける
-            if (animate) StartCoroutine(PopIn(card.RectTransform()));
-        }
-
-        // ちょっとしたポップイン
-        System.Collections.IEnumerator PopIn(RectTransform rt)
-        {
-            Vector3 from = Vector3.one * 0.01f;
-            Vector3 to = Vector3.one;
-            float t = 0f, dur = 0.12f;
-            rt.localScale = from;
-            while (t < dur)
-            {
-                t += Time.deltaTime;
-                rt.localScale = Vector3.LerpUnclamped(from, to, Mathf.SmoothStep(0, 1, t / dur));
-                yield return null;
-            }
-            rt.localScale = to;
-        }
-
-
-        public int GetHeight(int col) => stacks[col].childCount;
-
-        public bool CanPlaceAt(int col, int value, bool allowMergeOnSpawn)
-        {
-            var s = stacks[col];
-            if (s.childCount == 0) return true;
-
-            // 先頭が最上段（AddAtTopでSetAsFirstSiblingしている想定）
-            var top = s.GetChild(0).GetComponent<CardView>();
-            int topVal = top.Value;
-
-            if (!allowMergeOnSpawn && value == topVal) return false; // 同値合成禁止ならNG
-            if (ruleSet.allowDescending && value > topVal) return false; // 降順ルール
-
-            return (value <= topVal);
-        }
-
-        public int GetStackCount(int column)
-        {
-            return stacks[column].childCount;   // その列のカード枚数
-        }
-
-        public int GetChildCount(int col)
-        {
-            return stacks[col].childCount;   // ← Stack の RectTransform の子数
-        }
-
-        // ======================================================
-        // ★ ここから追加：トップ移動（列→列）
-        // ======================================================
-
-        /// <summary>fromCol のトップを toCol に置けるか（合体可）。</summary>
-        public bool CanMoveTop(int fromCol, int toCol, out bool willMerge)
-        {
-            willMerge = false;
-            if (inputLocked) return false;
-            if (fromCol == toCol) return false;
-            if (fromCol < 0 || fromCol >= stacks.Length) return false;
-            if (toCol < 0 || toCol >= stacks.Length) return false;
-
-            if (stacks[fromCol].childCount == 0) return false;
-
-            int value = PeekTopValueFromChild0(fromCol);
-
-            // 置き先の合法チェック（合体を許可）
-            if (!CanPlaceAt(toCol, value, allowMergeOnSpawn: true)) return false;
-
-            // to が空でなければ合体の可能性を返す
-            if (stacks[toCol].childCount > 0)
-            {
-                int topTo = PeekTopValueFromChild0(toCol);
-                willMerge = (ruleSet != null && ruleSet.allowEqualMerge && topTo == value);
-            }
-            return true;
-        }
-
-        /// <summary>
-        /// fromCol のトップ1枚を toCol に移動して合体/連鎖も解決。成功時 true、加点は scoreGain に。
-        /// </summary>
-        public bool MoveTop(int fromCol, int toCol, bool animate, out int scoreGain)
-        {
-            scoreGain = 0;
-            if (!CanMoveTop(fromCol, toCol, out _)) return false;
-
-            // 1) 値を取得して元を削除
-            int value = PopTopValueAndDestroyFromChild0(fromCol);
-
-            // 2) 置き先で合体＆連鎖
-            bool mergedAtLeastOnce = false;
-            if (ruleSet != null && ruleSet.allowEqualMerge)
-            {
-                while (stacks[toCol].childCount > 0)
-                {
-                    int topVal = PeekTopValueFromChild0(toCol);
-                    if (topVal != value) break;
-
-                    // 先頭を外して破棄
-                    var topRoot = stacks[toCol].GetChild(0);
-                    topRoot.SetParent(null, false);
-                    Destroy(topRoot.gameObject);
-
-                    value *= 2;
-                    scoreGain += value;
-                    mergedAtLeastOnce = true;
-
-                    if (!ruleSet.allowChainMerge) break;
-                }
-            }
-
-            // 3) 最終値を toCol の先頭に生成
-            var dst = stacks[toCol];
-            var go = Instantiate(cardViewPrefab, dst);
-            go.SetValue(value);
-            go.transform.SetAsFirstSibling();
-
-            var rt = go.RectTransform();
-            if (animate && rt) StartCoroutine(PopIn(rt));
-
-            // 4) 通知
-            if (mergedAtLeastOnce)
-            {
-                OnMerged?.Invoke(value);
-                if (rt) StartCoroutine(Pulse(rt));
-            }
-            else
-            {
-                OnPlacedNoMerge?.Invoke();
-            }
-
-            LastPlacedColumnIndex = toCol;
-
-            // 5) トップだけ掴めるように更新（任意）
-            RefreshTopDraggable();
-
-            return true;
-        }
-
-        /// <summary>
-        /// 各列の「最上段（child 0）」だけ Raycast を有効化。トップだけ掴める見た目用。
-        /// </summary>
-        public void RefreshTopDraggable()
-        {
-            for (int c = 0; c < stacks.Length; c++)
-            {
-                var st = stacks[c];
-                int n = st.childCount;
-                for (int i = 0; i < n; i++)
-                {
-                    var t = st.GetChild(i);
-                    var cv = t.GetComponent<CardView>();
-                    if (!cv || !cv.bg) continue;
-
-                    bool isTop = (i == 0); // AddAtTop が SetAsFirstSibling なので child 0 が最上段
-
-                    // Raycast はトップだけON（非トップはドラッグ不可）
-                    cv.bg.raycastTarget = isTop;
-
-                    // TopCardHandle の付与/有効化
-                    var handle = t.GetComponent<TopCardHandle>();
-                    if (isTop)
-                    {
-                        if (!handle) handle = t.gameObject.AddComponent<TopCardHandle>();
-                        handle.enabled = true;
-                        handle.columnIndex = c;
-                        handle.cardView = cv;
-                        handle.ghost = dragGhost; // ← ここが重要
-                        handle.board = this;
-                    }
-                    else
-                    {
-                        if (handle) handle.enabled = false;
-                    }
-                }
-            }
-        }
-
-
-        // ---- 追加ヘルパー ----
-
-        int PeekTopValueFromChild0(int col)
-        {
-            var st = stacks[col];
-            if (st.childCount == 0) return 0;
-            return ReadValueFrom(st.GetChild(0));
-        }
-
-        int PopTopValueAndDestroyFromChild0(int col)
-        {
-            var st = stacks[col];
-            var t = st.GetChild(0);
-            int v = ReadValueFrom(t);
-            t.SetParent(null, false);
-            Destroy(t.gameObject);
-            return v;
-        }
-
-        // CardView / TMP_Text どちらでも値を読めるように
-        int ReadValueFrom(Transform cardRoot)
-        {
-            var cv = cardRoot.GetComponent<CardView>();
-            if (cv != null) return cv.Value;
-
-            var t = cardRoot.GetComponentInChildren<TMP_Text>();
-            if (t != null && int.TryParse(t.text, out var v)) return v;
-
-            return 0;
-        }
-
-        void SetCardValue(Transform cardRoot, int v)
-        {
-            var cv = cardRoot.GetComponent<CardView>();
-            if (cv != null) { cv.SetValue(v); return; }
-            var t = cardRoot.GetComponentInChildren<TMP_Text>();
-            if (t != null) t.text = v.ToString();
-        }
+        // RowSpawner 互換の軽量 PopIn
+        IEnumerator PopIn(RectTransform rt) => Pop(rt);
     }
 }

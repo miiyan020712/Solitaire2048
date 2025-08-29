@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1550245293516113018}
   - component: {fileID: 3865223503369703412}
   - component: {fileID: 7182476530876327354}
+  - component: {fileID: 6091685588578961378}
   m_Layer: 0
   m_Name: CardView
   m_TagString: Untagged
@@ -61,8 +62,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 0
+  m_Color: {r: 0.93333334, g: 0.89411765, b: 0.85490197, a: 1}
+  m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -113,6 +114,22 @@ MonoBehaviour:
   bg: {fileID: 1550245293516113018}
   valueText: {fileID: 2029022447753297174}
   value: 2
+--- !u!114 &6091685588578961378
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6088227943359288213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f0bbdad61376ef248a36fabf770466c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  columnIndex: 0
+  cardView: {fileID: 0}
+  ghost: {fileID: 0}
+  board: {fileID: 0}
 --- !u!1 &7207770912999271310
 GameObject:
   m_ObjectHideFlags: 0
@@ -178,9 +195,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '16
-
-'
+  m_text: 2
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
